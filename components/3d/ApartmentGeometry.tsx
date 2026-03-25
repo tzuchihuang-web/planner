@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import * as THREE from "three";
 import { APARTMENT, APARTMENT_COLORS } from "@/lib/apartment-dimensions";
 
@@ -24,9 +24,10 @@ function Wall({
 
 export function ApartmentGeometry() {
   const { width, depth, height, wallThickness, bathroom, kitchen, entry } = APARTMENT;
+  const [floorTexture, setFloorTexture] = useState<THREE.CanvasTexture | null>(null);
 
-  // Floor with grid pattern
-  const floorTexture = useMemo(() => {
+  // Floor with grid pattern - create texture on client side only
+  useEffect(() => {
     const canvas = document.createElement("canvas");
     canvas.width = 512;
     canvas.height = 512;
@@ -57,7 +58,7 @@ export function ApartmentGeometry() {
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(1, 1);
-    return texture;
+    setFloorTexture(texture);
   }, []);
 
   return (
@@ -65,7 +66,11 @@ export function ApartmentGeometry() {
       {/* Main Floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[width / 2, 0, depth / 2]} receiveShadow>
         <planeGeometry args={[width, depth]} />
-        <meshStandardMaterial map={floorTexture} />
+        {floorTexture ? (
+          <meshStandardMaterial map={floorTexture} />
+        ) : (
+          <meshStandardMaterial color={APARTMENT_COLORS.floor} />
+        )}
       </mesh>
 
       {/* === WALLS === */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { useThree } from "@react-three/fiber";
+import { useThree, ThreeEvent } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Furniture } from "@/lib/types";
 import { useStudioStore } from "@/lib/store";
@@ -99,7 +99,7 @@ export function FurnitureItem({ furniture }: FurnitureItemProps) {
     allFurniture,
   ]);
 
-  const handlePointerDown = (e: THREE.Event) => {
+  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
     if (viewMode === "walkthrough") return;
     e.stopPropagation();
 
@@ -113,10 +113,9 @@ export function FurnitureItem({ furniture }: FurnitureItemProps) {
     setIsDragging(true);
 
     const rect = gl.domElement.getBoundingClientRect();
-    const event = e as unknown as { clientX: number; clientY: number };
     const mouse = new THREE.Vector2(
-      ((event.clientX - rect.left) / rect.width) * 2 - 1,
-      -((event.clientY - rect.top) / rect.height) * 2 + 1
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1
     );
 
     raycaster.setFromCamera(mouse, camera);

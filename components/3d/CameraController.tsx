@@ -15,8 +15,7 @@ const PLAYER_RADIUS = 0.25;
 
 export function CameraController() {
   const { viewMode, furniture, exitWalkthrough, selectFurniture } = useStudioStore();
-  const { camera, gl } = useThree();
-  const controlsRef = useRef<typeof PointerLockControls | null>(null);
+  const { camera } = useThree();
 
   // Movement state for walkthrough
   const moveState = useRef({
@@ -221,7 +220,6 @@ export function CameraController() {
   if (viewMode === "walkthrough") {
     return (
       <PointerLockControls
-        ref={controlsRef as never}
         onUnlock={() => {
           // Optional: exit walkthrough when pointer lock is released
         }}
