@@ -252,8 +252,6 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
     const { furniture, scenario } = get();
     const paths: MovementPath[] = [];
 
-    console.log("[v0] calculatePaths called, scenario:", scenario, "furniture count:", furniture.length);
-
     // Only calculate for Studio B
     if (scenario !== "B") {
       set({ movementPaths: [] });
@@ -265,11 +263,10 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
     const desk = furniture.find(f => f.type === "desk");
     const bookshelf = furniture.find(f => f.type === "bookshelf");
 
-    console.log("[v0] Found furniture - bed:", !!bed, "desk:", !!desk, "bookshelf:", !!bookshelf);
-
-    // Bathroom position (center of bathroom)
-    const bathroomX = APARTMENT.bathroom.width / 2 + APARTMENT.wallThickness;
-    const bathroomZ = APARTMENT.depth - APARTMENT.bathroom.depth / 2 - APARTMENT.wallThickness;
+    // Bathroom entrance position (just outside bathroom door)
+    // Bathroom is in top-left corner, door faces into main living area
+    const bathroomX = APARTMENT.bathroom.width + APARTMENT.wallThickness + 0.3; // Just outside bathroom
+    const bathroomZ = APARTMENT.depth - APARTMENT.bathroom.depth - 0.3; // Near bathroom entrance
 
     // Helper to analyze path and get status
     const analyzePathStatus = (pathPoints: Array<{ x: number; z: number }>): PathPoint[] => {
@@ -321,9 +318,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
       const bedX = bed.position[0];
       const bedZ = bed.position[2];
       
-      console.log("[v0] Finding path from bed at", bedX, bedZ, "to bathroom at", bathroomX, bathroomZ);
       const pathPoints = findPath(bedX, bedZ, bathroomX, bathroomZ, furniture);
-      console.log("[v0] Bed->Bathroom path points:", pathPoints.length);
       if (pathPoints.length > 0) {
         const smoothedPath = smoothPath(pathPoints);
         paths.push({
@@ -342,9 +337,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
       const shelfX = bookshelf.position[0];
       const shelfZ = bookshelf.position[2];
       
-      console.log("[v0] Finding path from desk at", deskX, deskZ, "to shelf at", shelfX, shelfZ);
       const pathPoints = findPath(deskX, deskZ, shelfX, shelfZ, furniture);
-      console.log("[v0] Desk->Shelf path points:", pathPoints.length);
       if (pathPoints.length > 0) {
         const smoothedPath = smoothPath(pathPoints);
         paths.push({
@@ -356,7 +349,6 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
       }
     }
 
-    console.log("[v0] Total paths calculated:", paths.length);
     set({ movementPaths: paths });
   },
 

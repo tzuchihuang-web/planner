@@ -8,8 +8,8 @@ import { APARTMENT } from "@/lib/apartment-dimensions";
 import { getFurnitureAABB, aabbOverlap } from "@/lib/collision-detection";
 
 const EYE_HEIGHT = 1.7;
-const WALK_SPEED = 1.5;
-const LOOK_AHEAD_DISTANCE = 0.8;
+const WALK_SPEED = 4.0; // Natural walking pace
+const LOOK_AHEAD_DISTANCE = 0.15;
 
 export function GuidedWalkthrough() {
   const { 
