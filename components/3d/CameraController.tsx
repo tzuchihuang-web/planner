@@ -171,15 +171,21 @@ export function CameraController() {
   // Set initial camera position based on view mode
   useEffect(() => {
     if (viewMode === "topdown") {
-      camera.position.set(APARTMENT.width / 2, 12, APARTMENT.depth / 2);
+      // Angled ~45 degree top-down view for better spatial understanding
+      camera.position.set(APARTMENT.width / 2, 14, APARTMENT.depth / 2 + 8);
+      camera.lookAt(APARTMENT.width / 2, 0, APARTMENT.depth / 2);
+      if (camera instanceof THREE.PerspectiveCamera) {
+        camera.fov = 45;
+        camera.updateProjectionMatrix();
+      }
+    } else if (viewMode === "3d") {
+      // 45-degree angled view - zoomed out to see full layout
+      camera.position.set(APARTMENT.width / 2, 12, APARTMENT.depth + 10);
       camera.lookAt(APARTMENT.width / 2, 0, APARTMENT.depth / 2);
       if (camera instanceof THREE.PerspectiveCamera) {
         camera.fov = 50;
         camera.updateProjectionMatrix();
       }
-    } else if (viewMode === "3d") {
-      camera.position.set(APARTMENT.width / 2 + 8, 8, APARTMENT.depth / 2 + 8);
-      camera.lookAt(APARTMENT.width / 2, 1, APARTMENT.depth / 2);
     } else if (viewMode === "walkthrough") {
       // Start near the entry
       camera.position.set(1.5, EYE_HEIGHT, 1.5);
@@ -192,11 +198,13 @@ export function CameraController() {
   if (viewMode === "topdown") {
     return (
       <OrbitControls
-        enableRotate={false}
+        enableRotate={true}
         enablePan={true}
         enableZoom={true}
-        minDistance={5}
-        maxDistance={20}
+        minDistance={8}
+        maxDistance={25}
+        minPolarAngle={Math.PI / 6}
+        maxPolarAngle={Math.PI / 2.5}
         target={[APARTMENT.width / 2, 0, APARTMENT.depth / 2]}
       />
     );
@@ -208,10 +216,11 @@ export function CameraController() {
         enableRotate={true}
         enablePan={true}
         enableZoom={true}
-        minDistance={3}
-        maxDistance={25}
+        minDistance={5}
+        maxDistance={30}
+        minPolarAngle={Math.PI / 8}
         maxPolarAngle={Math.PI / 2 - 0.1}
-        target={[APARTMENT.width / 2, 1, APARTMENT.depth / 2]}
+        target={[APARTMENT.width / 2, 0, APARTMENT.depth / 2]}
       />
     );
   }

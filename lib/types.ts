@@ -33,9 +33,24 @@ export interface Furniture {
   color: string;
 }
 
-export type ViewMode = "topdown" | "3d" | "walkthrough";
+export type ViewMode = "topdown" | "3d" | "walkthrough" | "pathReveal" | "guidedWalkthrough";
 
 export type Scenario = "A" | "B";
+
+export type PathStatus = "clear" | "tight" | "blocked";
+
+export interface PathPoint {
+  x: number;
+  z: number;
+  status: PathStatus;
+}
+
+export interface MovementPath {
+  id: string;
+  name: string;
+  points: PathPoint[];
+  color: string;
+}
 
 export interface ScenarioConfig {
   id: Scenario;
