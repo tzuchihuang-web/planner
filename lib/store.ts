@@ -4,7 +4,7 @@ import { FURNITURE_CATALOG } from "./furniture-catalog";
 import { generateId } from "./utils";
 import { validatePlacement, getFurnitureAABB, aabbOverlap } from "./collision-detection";
 import { APARTMENT, RESTRICTED_ZONES } from "./apartment-dimensions";
-import { findPath, smoothPath } from "./pathfinding";
+import { findPath, smoothPath, getFurnitureEdgePosition } from "./pathfinding";
 
 interface StudioStore {
   // Current scenario
@@ -315,10 +315,10 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
 
     // Path 1: Bed to Bathroom (night path)
     if (bed) {
-      const bedX = bed.position[0];
-      const bedZ = bed.position[2];
+      // Get edge of bed facing toward bathroom
+      const bedEdge = getFurnitureEdgePosition(bed, bathroomX, bathroomZ);
       
-      const pathPoints = findPath(bedX, bedZ, bathroomX, bathroomZ, furniture);
+      const pathPoints = findPath(bedEdge.x, bedEdge.z, bathroomX, bathroomZ, furniture);
       if (pathPoints.length > 0) {
         const smoothedPath = smoothPath(pathPoints);
         paths.push({
@@ -332,12 +332,15 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
 
     // Path 2: Desk to Shelf (daily movement)
     if (desk && bookshelf) {
-      const deskX = desk.position[0];
-      const deskZ = desk.position[2];
+      // Get edge of desk facing toward bookshelf
       const shelfX = bookshelf.position[0];
       const shelfZ = bookshelf.position[2];
+      const deskEdge = getFurnitureEdgePosition(desk, shelfX, shelfZ);
       
-      const pathPoints = findPath(deskX, deskZ, shelfX, shelfZ, furniture);
+      // Get edge of bookshelf facing toward desk
+      const shelfEdge = getFurnitureEdgePosition(bookshelf, deskEdge.x, deskEdge.z);
+      
+      const pathPoints = findPath(deskEdge.x, deskEdge.z, shelfEdge.x, shelfEdge.z, furniture);
       if (pathPoints.length > 0) {
         const smoothedPath = smoothPath(pathPoints);
         paths.push({
