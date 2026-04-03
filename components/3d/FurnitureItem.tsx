@@ -26,6 +26,7 @@ export function FurnitureItem({ furniture }: FurnitureItemProps) {
     pushUndo,
     furniture: allFurniture,
     viewMode,
+    scenario,
   } = useStudioStore();
 
   const isSelected = selectedId === furniture.id;
@@ -69,7 +70,7 @@ export function FurnitureItem({ furniture }: FurnitureItemProps) {
           position: [clampedX, position[1], clampedZ],
         };
 
-        if (validatePlacement(testFurniture, allFurniture).valid) {
+        if (validatePlacement(testFurniture, allFurniture, scenario).valid) {
           moveFurniture(furniture.id, clampedX, clampedZ);
         }
       }
@@ -97,6 +98,7 @@ export function FurnitureItem({ furniture }: FurnitureItemProps) {
     position,
     moveFurniture,
     allFurniture,
+    scenario,
   ]);
 
   const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {

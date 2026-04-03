@@ -5,6 +5,7 @@ import { FurniturePanel } from "./FurniturePanel";
 import { ItemDetailsPanel } from "./ItemDetailsPanel";
 import { ControlsPanel } from "./ControlsPanel";
 import { ViewToggle } from "./ViewToggle";
+import { GuidancePanel } from "./GuidancePanel";
 import { useStudioStore } from "@/lib/store";
 
 export function ToolPanel() {
@@ -36,6 +37,11 @@ export function ToolPanel() {
 
       <div className="border-t border-border pt-4">
         <ItemDetailsPanel />
+      </div>
+
+      {/* Guidance Button - Studio B only */}
+      <div className="border-t border-border pt-4">
+        <GuidancePanel />
       </div>
 
       {/* Help text */}

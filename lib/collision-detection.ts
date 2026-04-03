@@ -1,5 +1,5 @@
-import type { Furniture, AABB } from "./types";
-import { RESTRICTED_ZONES, WALL_BOUNDS, APARTMENT } from "./apartment-dimensions";
+import type { Furniture, AABB, Scenario } from "./types";
+import { RESTRICTED_ZONES, WALL_BOUNDS, APARTMENT, getRestrictedZones } from "./apartment-dimensions";
 
 // Get AABB for a furniture piece (accounting for rotation)
 export function getFurnitureAABB(furniture: Furniture): AABB {
@@ -39,12 +39,13 @@ export function isWithinWalls(aabb: AABB): boolean {
 }
 
 // Check if furniture overlaps with restricted zones
-export function overlapsRestrictedZone(aabb: AABB): { overlaps: boolean; zone?: string } {
-  if (aabbOverlap(aabb, RESTRICTED_ZONES.bathroom)) {
-    return { overlaps: true, zone: "bathroom" };
-  }
-  if (aabbOverlap(aabb, RESTRICTED_ZONES.kitchen)) {
-    return { overlaps: true, zone: "kitchen" };
+export function overlapsRestrictedZone(aabb: AABB, scenario: Scenario = "A"): { overlaps: boolean; zone?: string } {
+  const zones = getRestrictedZones(scenario);
+  
+  for (const [zoneName, zone] of Object.entries(zones)) {
+    if (aabbOverlap(aabb, zone)) {
+      return { overlaps: true, zone: zoneName };
+    }
   }
   return { overlaps: false };
 }
@@ -70,7 +71,8 @@ export function overlapsOtherFurniture(
 // Validate furniture placement
 export function validatePlacement(
   furniture: Furniture,
-  allFurniture: Furniture[]
+  allFurniture: Furniture[],
+  scenario: Scenario = "A"
 ): { valid: boolean; reason?: string } {
   const aabb = getFurnitureAABB(furniture);
 
@@ -79,8 +81,8 @@ export function validatePlacement(
     return { valid: false, reason: "Furniture is outside apartment bounds" };
   }
 
-  // Check restricted zones
-  const restrictedCheck = overlapsRestrictedZone(aabb);
+  // Check restricted zones (including scenario-specific obstacles)
+  const restrictedCheck = overlapsRestrictedZone(aabb, scenario);
   if (restrictedCheck.overlaps) {
     return { valid: false, reason: `Cannot place furniture in ${restrictedCheck.zone}` };
   }

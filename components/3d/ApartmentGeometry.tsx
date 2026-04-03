@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import * as THREE from "three";
-import { APARTMENT, APARTMENT_COLORS } from "@/lib/apartment-dimensions";
+import { APARTMENT, APARTMENT_COLORS, getScenarioConfig } from "@/lib/apartment-dimensions";
+import { useStudioStore } from "@/lib/store";
 
 // Wall component
 function Wall({
@@ -24,6 +25,8 @@ function Wall({
 
 export function ApartmentGeometry() {
   const { width, depth, height, wallThickness, bathroom, kitchen, entry } = APARTMENT;
+  const scenario = useStudioStore((state) => state.scenario);
+  const scenarioConfig = getScenarioConfig(scenario);
   const [floorTexture, setFloorTexture] = useState<THREE.CanvasTexture | null>(null);
 
   // Floor with grid pattern - create texture on client side only
@@ -179,11 +182,17 @@ export function ApartmentGeometry() {
         <meshStandardMaterial color="#c5bfb5" />
       </mesh>
 
-      {/* Ceiling (optional, for enclosed feeling) */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[width / 2, height, depth / 2]}>
-        <planeGeometry args={[width, depth]} />
-        <meshStandardMaterial color="#faf9f7" side={THREE.BackSide} />
-      </mesh>
+      {/* Scenario-specific obstacles (Studio B only) - full wall height */}
+      {scenarioConfig.obstacles.map((obstacle, index) => (
+        <mesh
+          key={`obstacle-${index}`}
+          position={[obstacle.x, height / 2, obstacle.z]}
+        >
+          <boxGeometry args={[obstacle.width, height, obstacle.depth]} />
+          <meshStandardMaterial color={obstacle.isWallMounted ? APARTMENT_COLORS.walls : "#c5c0b8"} />
+        </mesh>
+      ))}
+
     </group>
   );
 }

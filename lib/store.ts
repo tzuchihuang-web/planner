@@ -1,8 +1,10 @@
 import { create } from "zustand";
-import type { Furniture, ViewMode, Scenario, ApartmentState, FurnitureType } from "./types";
+import type { Furniture, ViewMode, Scenario, ApartmentState, FurnitureType, MovementPath, PathPoint, PathStatus } from "./types";
 import { FURNITURE_CATALOG } from "./furniture-catalog";
 import { generateId } from "./utils";
-import { validatePlacement } from "./collision-detection";
+import { validatePlacement, getFurnitureAABB, aabbOverlap } from "./collision-detection";
+import { APARTMENT, RESTRICTED_ZONES } from "./apartment-dimensions";
+import { findPath, smoothPath, getFurnitureEdgePosition, setPathfindingScenario } from "./pathfinding";
 
 interface StudioStore {
   // Current scenario
@@ -39,6 +41,21 @@ interface StudioStore {
   isWalkthroughActive: boolean;
   startWalkthrough: () => void;
   exitWalkthrough: () => void;
+
+  // Path Reveal
+  showPathReveal: boolean;
+  movementPaths: MovementPath[];
+  calculatePaths: () => void;
+  togglePathReveal: () => void;
+
+  // Guided Walkthrough
+  guidedWalkthroughActive: boolean;
+  selectedPathId: string | null;
+  currentPathIndex: number;
+  walkthroughWarning: string | null;
+  startGuidedWalkthrough: (pathId?: string) => void;
+  exitGuidedWalkthrough: () => void;
+  setWalkthroughWarning: (warning: string | null) => void;
 }
 
 const DEFAULT_SPAWN_X = 6;
@@ -79,8 +96,8 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
       color: template.color,
     };
 
-    const { furniture } = get();
-    const validation = validatePlacement(newFurniture, furniture);
+    const { furniture, scenario } = get();
+    const validation = validatePlacement(newFurniture, furniture, scenario);
 
     // If default position is invalid, try to find a valid spot
     if (!validation.valid) {
@@ -98,7 +115,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
       let placed = false;
       for (const [px, pz] of positions) {
         newFurniture.position = [px, template.dimensions.height / 2, pz];
-        if (validatePlacement(newFurniture, furniture).valid) {
+        if (validatePlacement(newFurniture, furniture, scenario).valid) {
           placed = true;
           break;
         }
@@ -130,7 +147,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
   },
 
   moveFurniture: (id, x, z) => {
-    const { furniture } = get();
+    const { furniture, scenario } = get();
     const item = furniture.find((f) => f.id === id);
     if (!item) return;
 
@@ -139,7 +156,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
       position: [x, item.position[1], z],
     };
 
-    const validation = validatePlacement(updated, furniture);
+    const validation = validatePlacement(updated, furniture, scenario);
     if (!validation.valid) {
       return; // Don't move if invalid
     }
@@ -150,7 +167,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
   },
 
   rotateFurniture: (id, rotation) => {
-    const { furniture } = get();
+    const { furniture, scenario } = get();
     const item = furniture.find((f) => f.id === id);
     if (!item) return;
 
@@ -159,7 +176,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
       rotation,
     };
 
-    const validation = validatePlacement(updated, furniture);
+    const validation = validatePlacement(updated, furniture, scenario);
     if (!validation.valid) {
       return;
     }
@@ -224,6 +241,166 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
   },
 
   exitWalkthrough: () => {
-    set({ viewMode: "3d", isWalkthroughActive: false });
+    set({ viewMode: "3d", isWalkthroughActive: false, guidedWalkthroughActive: false });
+  },
+
+  // Path Reveal
+  showPathReveal: false,
+  movementPaths: [],
+
+  calculatePaths: () => {
+    const { furniture, scenario } = get();
+    const paths: MovementPath[] = [];
+
+    // Set scenario for pathfinding obstacle checks
+    setPathfindingScenario(scenario);
+
+    // Only calculate for Studio B
+    if (scenario !== "B") {
+      set({ movementPaths: [] });
+      return;
+    }
+
+    // Find furniture positions
+    const bed = furniture.find(f => f.type === "bed");
+    const desk = furniture.find(f => f.type === "desk");
+    const bookshelf = furniture.find(f => f.type === "bookshelf");
+
+    // Bathroom entrance position (just outside bathroom door)
+    // Bathroom is in top-left corner, door faces into main living area
+    const bathroomX = APARTMENT.bathroom.width + APARTMENT.wallThickness + 0.3; // Just outside bathroom
+    const bathroomZ = APARTMENT.depth - APARTMENT.bathroom.depth - 0.3; // Near bathroom entrance
+
+    // Helper to analyze path and get status
+    const analyzePathStatus = (pathPoints: Array<{ x: number; z: number }>): PathPoint[] => {
+      const result: PathPoint[] = [];
+      const clearanceThreshold = 0.5;
+      const tightThreshold = 0.7;
+
+      for (const point of pathPoints) {
+        const checkRadius = 0.4;
+        const pointAABB = {
+          minX: point.x - checkRadius,
+          maxX: point.x + checkRadius,
+          minZ: point.z - checkRadius,
+          maxZ: point.z + checkRadius,
+        };
+
+        let status: PathStatus = "clear";
+
+        // Check kitchen
+        if (aabbOverlap(pointAABB, RESTRICTED_ZONES.kitchen)) {
+          status = "blocked";
+        } else {
+          // Check furniture clearance
+          for (const item of furniture) {
+            const furnitureAABB = getFurnitureAABB(item);
+            
+            // Calculate minimum distance to furniture
+            const dx = Math.max(furnitureAABB.minX - point.x, point.x - furnitureAABB.maxX, 0);
+            const dz = Math.max(furnitureAABB.minZ - point.z, point.z - furnitureAABB.maxZ, 0);
+            const distance = Math.sqrt(dx * dx + dz * dz);
+
+            if (distance < 0.1) {
+              status = "blocked";
+              break;
+            } else if (distance < tightThreshold) {
+              if (status !== "blocked") status = "tight";
+            }
+          }
+        }
+
+        result.push({ x: point.x, z: point.z, status });
+      }
+
+      return result;
+    };
+
+    // Path 1: Bed to Bathroom (night path)
+    if (bed) {
+      // Get edge of bed facing toward bathroom
+      const bedEdge = getFurnitureEdgePosition(bed, bathroomX, bathroomZ);
+      
+      const pathPoints = findPath(bedEdge.x, bedEdge.z, bathroomX, bathroomZ, furniture);
+      if (pathPoints.length > 0) {
+        const smoothedPath = smoothPath(pathPoints);
+        paths.push({
+          id: "bed-bathroom",
+          name: "Bed → Bathroom (Night)",
+          points: analyzePathStatus(smoothedPath),
+          color: "#22c55e", // green base
+        });
+      }
+    }
+
+    // Path 2: Desk to Shelf (daily movement)
+    if (desk && bookshelf) {
+      // Get edge of desk facing toward bookshelf
+      const shelfX = bookshelf.position[0];
+      const shelfZ = bookshelf.position[2];
+      const deskEdge = getFurnitureEdgePosition(desk, shelfX, shelfZ);
+      
+      // Get edge of bookshelf facing toward desk
+      const shelfEdge = getFurnitureEdgePosition(bookshelf, deskEdge.x, deskEdge.z);
+      
+      const pathPoints = findPath(deskEdge.x, deskEdge.z, shelfEdge.x, shelfEdge.z, furniture);
+      if (pathPoints.length > 0) {
+        const smoothedPath = smoothPath(pathPoints);
+        paths.push({
+          id: "desk-shelf",
+          name: "Desk ↔ Shelf (Day)",
+          points: analyzePathStatus(smoothedPath),
+          color: "#3b82f6", // blue base
+        });
+      }
+    }
+
+    set({ movementPaths: paths });
+  },
+
+  togglePathReveal: () => {
+    const { showPathReveal } = get();
+    if (!showPathReveal) {
+      get().calculatePaths();
+    }
+    set({ showPathReveal: !showPathReveal, viewMode: showPathReveal ? "3d" : "pathReveal" });
+  },
+
+  // Guided Walkthrough
+  guidedWalkthroughActive: false,
+  selectedPathId: null,
+  currentPathIndex: 0,
+  walkthroughWarning: null,
+
+  startGuidedWalkthrough: (pathId) => {
+    get().calculatePaths();
+    const paths = get().movementPaths;
+    const selectedPath = pathId 
+      ? paths.find(p => p.id === pathId)
+      : paths[0];
+    
+    const pathIndex = selectedPath ? paths.indexOf(selectedPath) : 0;
+    
+    set({ 
+      viewMode: "guidedWalkthrough", 
+      guidedWalkthroughActive: true, 
+      selectedPathId: selectedPath?.id || null,
+      currentPathIndex: pathIndex,
+      selectedId: null,
+      walkthroughWarning: null,
+    });
+  },
+
+  exitGuidedWalkthrough: () => {
+    set({ 
+      viewMode: "3d", 
+      guidedWalkthroughActive: false,
+      selectedPathId: null,
+      walkthroughWarning: null,
+    });
+  },
+
+  setWalkthroughWarning: (warning) => {
+    set({ walkthroughWarning: warning });
   },
 }));
