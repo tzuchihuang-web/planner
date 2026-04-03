@@ -7,7 +7,8 @@ export type FurnitureType =
   | "bookshelf"
   | "sofa"
   | "coffee-table"
-  | "storage";
+  | "storage"
+  | "dining-table";
 
 export interface FurnitureTemplate {
   type: FurnitureType;

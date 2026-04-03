@@ -43,6 +43,12 @@ export const FURNITURE_CATALOG: Record<FurnitureType, FurnitureTemplate> = {
     dimensions: { width: 1.0, height: 1.4, depth: 0.5 },
     color: "#d5cdc4", // Light wood
   },
+  "dining-table": {
+    type: "dining-table",
+    label: "Dining Table",
+    dimensions: { width: 1.2, height: 0.75, depth: 0.8 },
+    color: "#9c7a56", // Warm wood
+  },
 };
 
 export const FURNITURE_TYPES = Object.keys(FURNITURE_CATALOG) as FurnitureType[];

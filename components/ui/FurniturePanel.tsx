@@ -10,6 +10,7 @@ import {
   Sofa,
   Square,
   Archive,
+  UtensilsCrossed,
   type LucideIcon,
 } from "lucide-react";
 import type { FurnitureType } from "@/lib/types";
@@ -22,6 +23,7 @@ const FURNITURE_ICONS: Record<FurnitureType, LucideIcon> = {
   sofa: Sofa,
   "coffee-table": Square,
   storage: Archive,
+  "dining-table": UtensilsCrossed,
 };
 
 export function FurniturePanel() {
