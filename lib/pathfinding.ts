@@ -94,6 +94,26 @@ function getNeighbors(node: GridNode, goal: GridNode, furniture: Furniture[]): G
   return neighbors;
 }
 
+// Find nearest walkable point to a position
+function findNearestWalkable(x: number, z: number, furniture: Furniture[]): { x: number; z: number } | null {
+  if (isWalkable(x, z, furniture)) {
+    return { x, z };
+  }
+
+  // Search in expanding circles
+  for (let radius = GRID_SIZE; radius <= 2.0; radius += GRID_SIZE) {
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
+      const testX = x + Math.cos(angle) * radius;
+      const testZ = z + Math.sin(angle) * radius;
+      if (isWalkable(testX, testZ, furniture)) {
+        return { x: testX, z: testZ };
+      }
+    }
+  }
+
+  return null;
+}
+
 // A* pathfinding algorithm
 export function findPath(
   startX: number,
@@ -102,10 +122,19 @@ export function findPath(
   endZ: number,
   furniture: Furniture[]
 ): Array<{ x: number; z: number }> {
-  // If start or end is not walkable, return empty path
-  if (!isWalkable(startX, startZ, furniture) || !isWalkable(endX, endZ, furniture)) {
+  // Find nearest walkable points
+  const walkableStart = findNearestWalkable(startX, startZ, furniture);
+  const walkableEnd = findNearestWalkable(endX, endZ, furniture);
+
+  if (!walkableStart || !walkableEnd) {
     return [];
   }
+
+  // Use the walkable points as actual start/end
+  startX = walkableStart.x;
+  startZ = walkableStart.z;
+  endX = walkableEnd.x;
+  endZ = walkableEnd.z;
 
   const start: GridNode = {
     x: startX,

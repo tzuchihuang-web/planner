@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStudioStore } from "@/lib/store";
 
 export function GuidancePanel() {
@@ -11,8 +11,16 @@ export function GuidancePanel() {
     showPathReveal,
     viewMode,
     movementPaths,
+    calculatePaths,
   } = useStudioStore();
   const [isOpen, setIsOpen] = useState(false);
+
+  // Calculate paths when menu opens
+  useEffect(() => {
+    if (isOpen) {
+      calculatePaths();
+    }
+  }, [isOpen, calculatePaths]);
 
   // Only show for Studio B
   if (scenario !== "B") {
