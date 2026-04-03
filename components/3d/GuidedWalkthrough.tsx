@@ -10,6 +10,7 @@ import { getFurnitureAABB, aabbOverlap } from "@/lib/collision-detection";
 const EYE_HEIGHT = 1.7;
 const WALK_SPEED = 4.0; // Natural walking pace
 const LOOK_AHEAD_DISTANCE = 0.15;
+const PAUSE_AT_END = 1.5; // Seconds to pause before looping
 
 export function GuidedWalkthrough() {
   const { 
@@ -24,7 +25,7 @@ export function GuidedWalkthrough() {
   const { camera } = useThree();
   const progressRef = useRef(0);
   const isAnimatingRef = useRef(false);
-  const pathCompletedRef = useRef(false);
+  const pauseTimerRef = useRef(0);
 
   // Check for nearby furniture and generate warnings
   const checkForWarnings = useCallback((x: number, z: number): string | null => {
@@ -71,7 +72,7 @@ export function GuidedWalkthrough() {
     if (viewMode !== "guidedWalkthrough") return;
     
     progressRef.current = 0;
-    pathCompletedRef.current = false;
+    pauseTimerRef.current = 0;
     isAnimatingRef.current = true;
 
     // Find the selected path
@@ -103,8 +104,15 @@ export function GuidedWalkthrough() {
 
     if (!currentPath || currentPath.points.length < 2) return;
 
-    // Don't loop - once completed, stop
-    if (pathCompletedRef.current) {
+    // Handle pause at end before looping
+    if (pauseTimerRef.current > 0) {
+      pauseTimerRef.current -= delta;
+      if (pauseTimerRef.current <= 0) {
+        // Reset to start for loop
+        progressRef.current = 0;
+        const startPoint = currentPath.points[0];
+        camera.position.set(startPoint.x, EYE_HEIGHT, startPoint.z);
+      }
       return;
     }
 
@@ -114,7 +122,7 @@ export function GuidedWalkthrough() {
 
     if (progressRef.current >= 1) {
       progressRef.current = 1;
-      pathCompletedRef.current = true;
+      pauseTimerRef.current = PAUSE_AT_END; // Start pause timer, then loop
       return;
     }
 
