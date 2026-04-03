@@ -10,6 +10,7 @@ export function GuidancePanel() {
     startGuidedWalkthrough,
     showPathReveal,
     viewMode,
+    movementPaths,
   } = useStudioStore();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -34,20 +35,7 @@ export function GuidancePanel() {
 
       {isOpen && (
         <div className="mt-2 bg-card border border-border rounded-lg p-2 space-y-2 shadow-lg">
-          <button
-            onClick={() => {
-              startGuidedWalkthrough();
-              setIsOpen(false);
-            }}
-            className="w-full px-3 py-2 text-left text-sm rounded-md hover:bg-muted transition-colors flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            <span>Walkthrough (POV)</span>
-          </button>
-
+          {/* Path Reveal Button */}
           <button
             onClick={() => {
               togglePathReveal();
@@ -60,6 +48,35 @@ export function GuidancePanel() {
             </svg>
             <span>{showPathReveal ? "Hide Paths" : "Path Reveal"}</span>
           </button>
+
+          {/* Divider */}
+          <div className="border-t border-border"></div>
+
+          {/* Guided Walkthrough Path Buttons */}
+          <div className="text-xs font-medium text-muted-foreground px-2 py-1">Guided Walkthrough:</div>
+          
+          {movementPaths.map(path => (
+            <button
+              key={path.id}
+              onClick={() => {
+                startGuidedWalkthrough(path.id);
+                setIsOpen(false);
+              }}
+              className="w-full px-3 py-2 text-left text-sm rounded-md hover:bg-muted transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <span>{path.name}</span>
+            </button>
+          ))}
+
+          {movementPaths.length === 0 && (
+            <div className="text-xs text-muted-foreground px-2 py-2">
+              Place bed, desk, and bookshelf to enable walkthroughs
+            </div>
+          )}
         </div>
       )}
 

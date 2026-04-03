@@ -18,14 +18,13 @@ export function GuidedWalkthrough() {
     furniture,
     exitGuidedWalkthrough,
     setWalkthroughWarning,
-    currentPathIndex,
+    selectedPathId,
   } = useStudioStore();
   
   const { camera } = useThree();
   const progressRef = useRef(0);
-  const pathIndexRef = useRef(0);
   const isAnimatingRef = useRef(false);
-  const pauseTimeRef = useRef(0);
+  const pathCompletedRef = useRef(false);
 
   // Check for nearby furniture and generate warnings
   const checkForWarnings = useCallback((x: number, z: number): string | null => {
@@ -60,7 +59,7 @@ export function GuidedWalkthrough() {
         if (aabbOverlap(playerAABB, tightAABB)) {
           return `You might bump into the ${item.type}`;
         }
-        return "Path is narrow here";
+        return "This area feels narrow when walking";
       }
     }
 
@@ -72,45 +71,40 @@ export function GuidedWalkthrough() {
     if (viewMode !== "guidedWalkthrough") return;
     
     progressRef.current = 0;
-    pathIndexRef.current = 0;
+    pathCompletedRef.current = false;
     isAnimatingRef.current = true;
-    pauseTimeRef.current = 0;
 
-    // Start at the beginning of the first path
-    const firstPath = movementPaths[0];
-    if (firstPath && firstPath.points.length > 0) {
-      const startPoint = firstPath.points[0];
+    // Find the selected path
+    const currentPath = selectedPathId 
+      ? movementPaths.find(p => p.id === selectedPathId)
+      : movementPaths[0];
+
+    if (currentPath && currentPath.points.length > 0) {
+      const startPoint = currentPath.points[0];
       camera.position.set(startPoint.x, EYE_HEIGHT, startPoint.z);
       
       // Look toward second point
-      if (firstPath.points.length > 1) {
-        const nextPoint = firstPath.points[1];
+      if (currentPath.points.length > 1) {
+        const nextPoint = currentPath.points[1];
         camera.lookAt(nextPoint.x, EYE_HEIGHT, nextPoint.z);
       }
     }
-  }, [viewMode, movementPaths, camera]);
+  }, [viewMode, selectedPathId, movementPaths, camera]);
 
-  // Animate along paths
+  // Animate along the selected path only
   useFrame((_, delta) => {
     if (viewMode !== "guidedWalkthrough" || !isAnimatingRef.current) return;
     if (movementPaths.length === 0) return;
 
-    const currentPath = movementPaths[pathIndexRef.current];
+    // Get the selected path
+    const currentPath = selectedPathId 
+      ? movementPaths.find(p => p.id === selectedPathId)
+      : movementPaths[0];
+
     if (!currentPath || currentPath.points.length < 2) return;
 
-    // Handle pause at end of path
-    if (pauseTimeRef.current > 0) {
-      pauseTimeRef.current -= delta;
-      if (pauseTimeRef.current <= 0) {
-        // Move to next path
-        pathIndexRef.current++;
-        if (pathIndexRef.current >= movementPaths.length) {
-          // All paths done, restart
-          pathIndexRef.current = 0;
-        }
-        progressRef.current = 0;
-        setWalkthroughWarning(null);
-      }
+    // Don't loop - once completed, stop
+    if (pathCompletedRef.current) {
       return;
     }
 
@@ -120,7 +114,7 @@ export function GuidedWalkthrough() {
 
     if (progressRef.current >= 1) {
       progressRef.current = 1;
-      pauseTimeRef.current = 2; // Pause for 2 seconds at destination
+      pathCompletedRef.current = true;
       return;
     }
 

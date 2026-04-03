@@ -17,10 +17,14 @@ export function ApartmentScene() {
     exitGuidedWalkthrough,
     exitWalkthrough,
     movementPaths,
-    currentPathIndex,
+    selectedPathId,
     showPathReveal,
     togglePathReveal,
   } = useStudioStore();
+
+  const currentPath = selectedPathId 
+    ? movementPaths.find(p => p.id === selectedPathId)
+    : movementPaths[0];
 
   const handleCanvasClick = () => {
     // Deselect when clicking on empty space (not on furniture)
@@ -89,10 +93,19 @@ export function ApartmentScene() {
           {/* Current path info */}
           <div className="absolute top-4 left-4 bg-card/90 backdrop-blur-sm px-4 py-2 rounded-lg text-sm shadow-lg">
             <p className="font-medium">Guided Walkthrough</p>
-            {movementPaths[currentPathIndex] && (
-              <p className="text-muted-foreground text-xs mt-1">
-                {movementPaths[currentPathIndex].name}
-              </p>
+            {currentPath && (
+              <>
+                <p className="text-muted-foreground text-xs mt-1">
+                  {currentPath.name}
+                </p>
+                <p className="text-muted-foreground text-xs mt-2">
+                  {currentPath.points.filter(p => p.status === "blocked").length > 0 
+                    ? "⚠️ Path has blocked sections"
+                    : currentPath.points.filter(p => p.status === "tight").length > 0
+                    ? "Path has tight areas"
+                    : "Clear path ahead"}
+                </p>
+              </>
             )}
           </div>
 
