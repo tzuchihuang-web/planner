@@ -18,18 +18,12 @@ export function ApartmentScene() {
     exitWalkthrough,
     movementPaths,
     selectedPathId,
-    showPathReveal,
     togglePathReveal,
   } = useStudioStore();
 
   const currentPath = selectedPathId 
     ? movementPaths.find(p => p.id === selectedPathId)
     : movementPaths[0];
-
-  const handleCanvasClick = () => {
-    // Deselect when clicking on empty space (not on furniture)
-    // This is handled by stopPropagation in FurnitureItem
-  };
 
   return (
     <div className="w-full h-full">

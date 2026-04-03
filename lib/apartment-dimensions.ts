@@ -72,7 +72,7 @@ export const STUDIO_B_CONFIG = {
     // Column/pillar near living area - full height
     { x: 5, z: 2.5, width: 0.35, depth: 0.35, isWallMounted: false },
     // Storage alcove built into back wall - full height, flush with wall
-    { x: 9.5, z: APARTMENT.depth - 0.4, width: 1.8, depth: 0.8, isWallMounted: true },
+    { x: 9.5, z: 4.6, width: 1.8, depth: 0.8, isWallMounted: true }, // APARTMENT.depth (5) - 0.4
   ],
   
   // Bathroom position makes night access trickier

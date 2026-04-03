@@ -4,7 +4,6 @@ import { useRef, useEffect, useCallback } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useStudioStore } from "@/lib/store";
-import { APARTMENT } from "@/lib/apartment-dimensions";
 import { getFurnitureAABB, aabbOverlap } from "@/lib/collision-detection";
 
 const EYE_HEIGHT = 1.7;
