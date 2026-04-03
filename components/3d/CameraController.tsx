@@ -198,13 +198,11 @@ export function CameraController() {
   if (viewMode === "topdown") {
     return (
       <OrbitControls
-        enableRotate={true}
+        enableRotate={false}
         enablePan={true}
         enableZoom={true}
         minDistance={8}
         maxDistance={25}
-        minPolarAngle={Math.PI / 6}
-        maxPolarAngle={Math.PI / 2.5}
         target={[APARTMENT.width / 2, 0, APARTMENT.depth / 2]}
       />
     );
