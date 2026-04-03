@@ -1,9 +1,16 @@
-import type { Furniture } from "./types";
-import { APARTMENT, RESTRICTED_ZONES } from "./apartment-dimensions";
+import type { Furniture, Scenario } from "./types";
+import { APARTMENT, RESTRICTED_ZONES, getScenarioConfig } from "./apartment-dimensions";
 import { getFurnitureAABB, aabbOverlap } from "./collision-detection";
 
 const GRID_SIZE = 0.25; // 25cm grid cells for finer paths
 const MIN_CLEARANCE = 0.25; // Minimum clearance from obstacles
+
+// Current scenario for obstacle checking
+let currentScenario: Scenario = "B";
+
+export function setPathfindingScenario(scenario: Scenario) {
+  currentScenario = scenario;
+}
 
 // Check if a point is walkable with given clearance
 function isWalkable(x: number, z: number, furniture: Furniture[], clearance: number = MIN_CLEARANCE): boolean {
@@ -37,6 +44,21 @@ function isWalkable(x: number, z: number, furniture: Furniture[], clearance: num
   // Check kitchen restricted zone
   if (aabbOverlap(point, RESTRICTED_ZONES.kitchen)) {
     return false;
+  }
+
+  // Check scenario-specific obstacles (pillar, storage alcove)
+  const scenarioConfig = getScenarioConfig(currentScenario);
+  for (const obstacle of scenarioConfig.obstacles) {
+    const obstacleZone = {
+      minX: obstacle.x - obstacle.width / 2 - clearance,
+      maxX: obstacle.x + obstacle.width / 2 + clearance,
+      minZ: obstacle.z - obstacle.depth / 2 - clearance,
+      maxZ: obstacle.z + obstacle.depth / 2 + clearance,
+    };
+    if (x >= obstacleZone.minX && x <= obstacleZone.maxX &&
+        z >= obstacleZone.minZ && z <= obstacleZone.maxZ) {
+      return false;
+    }
   }
 
   // Check furniture with smaller clearance

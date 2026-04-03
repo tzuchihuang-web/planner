@@ -46,13 +46,16 @@ export const APARTMENT_COLORS = {
   accent: "#8b7355", // Wood accent
 };
 
+// Obstacle type
+type Obstacle = { x: number; z: number; width: number; depth: number; isWallMounted: boolean };
+
 // Studio A: Open layout with fewer constraints
 export const STUDIO_A_CONFIG = {
   // Wider walking areas
   walkwayMinWidth: 0.8,
   
   // No additional obstacles
-  obstacles: [] as { x: number; z: number; width: number; depth: number }[],
+  obstacles: [] as Obstacle[],
   
   // Bathroom is easily accessible
   bathroomAccess: "easy" as const,
@@ -64,11 +67,12 @@ export const STUDIO_B_CONFIG = {
   walkwayMinWidth: 0.5,
   
   // Additional spatial constraints (pillars, fixed elements)
+  // Each obstacle has x, z (center position), width, depth, and isWallMounted flag
   obstacles: [
-    // Column near living area
-    { x: 5, z: 2.5, width: 0.3, depth: 0.3 },
-    // Storage alcove that narrows path
-    { x: 9, z: 4.3, width: 1.5, depth: 0.6 },
+    // Column/pillar near living area - full height
+    { x: 5, z: 2.5, width: 0.35, depth: 0.35, isWallMounted: false },
+    // Storage alcove built into back wall - full height, flush with wall
+    { x: 9.5, z: APARTMENT.depth - 0.4, width: 1.8, depth: 0.8, isWallMounted: true },
   ],
   
   // Bathroom position makes night access trickier

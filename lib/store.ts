@@ -4,7 +4,7 @@ import { FURNITURE_CATALOG } from "./furniture-catalog";
 import { generateId } from "./utils";
 import { validatePlacement, getFurnitureAABB, aabbOverlap } from "./collision-detection";
 import { APARTMENT, RESTRICTED_ZONES } from "./apartment-dimensions";
-import { findPath, smoothPath, getFurnitureEdgePosition } from "./pathfinding";
+import { findPath, smoothPath, getFurnitureEdgePosition, setPathfindingScenario } from "./pathfinding";
 
 interface StudioStore {
   // Current scenario
@@ -251,6 +251,9 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
   calculatePaths: () => {
     const { furniture, scenario } = get();
     const paths: MovementPath[] = [];
+
+    // Set scenario for pathfinding obstacle checks
+    setPathfindingScenario(scenario);
 
     // Only calculate for Studio B
     if (scenario !== "B") {

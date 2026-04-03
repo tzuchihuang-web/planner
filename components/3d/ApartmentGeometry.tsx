@@ -182,14 +182,14 @@ export function ApartmentGeometry() {
         <meshStandardMaterial color="#c5bfb5" />
       </mesh>
 
-      {/* Scenario-specific obstacles (Studio B only) */}
+      {/* Scenario-specific obstacles (Studio B only) - full wall height */}
       {scenarioConfig.obstacles.map((obstacle, index) => (
         <mesh
           key={`obstacle-${index}`}
-          position={[obstacle.x, height / 4, obstacle.z]}
+          position={[obstacle.x, height / 2, obstacle.z]}
         >
-          <boxGeometry args={[obstacle.width, height / 2, obstacle.depth]} />
-          <meshStandardMaterial color="#d4d0c8" />
+          <boxGeometry args={[obstacle.width, height, obstacle.depth]} />
+          <meshStandardMaterial color={obstacle.isWallMounted ? APARTMENT_COLORS.walls : "#c5c0b8"} />
         </mesh>
       ))}
 
